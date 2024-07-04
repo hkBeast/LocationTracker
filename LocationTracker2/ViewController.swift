@@ -3,8 +3,9 @@ import CoreLocation
 import MapKit
 import UserNotifications
 
+
 class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
-    
+    //MARK: - Variables
     let locationManager = CLLocationManager()
     var mapView: MKMapView!
     var saveLocationButton: UIButton!
@@ -19,7 +20,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        // initiate all initial settings
         setupMapView()
         setupSaveLocationButton()
         setupLabels()
@@ -30,25 +31,29 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        
+        // every time view will appear it alert tells that you have to long press for save location
         showLongPressAlert()
     }
     
+    // long press alert
     func showLongPressAlert() {
         let alert = UIAlertController(title: "Select Saved Location", message: "Long press on the map to select a location for saving.", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         present(alert, animated: true, completion: nil)
     }
     
+    // create mapView and pass delegate
     func setupMapView() {
         mapView = MKMapView(frame: view.bounds)
         mapView.delegate = self
+        // show it on view
         view.addSubview(mapView)
         
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gestureRecognizer:)))
         mapView.addGestureRecognizer(longPressGesture)
     }
     
+    // button to save select location as Saved Location
     func setupSaveLocationButton() {
         saveLocationButton = UIButton(frame: CGRect(x: 20, y: view.frame.height - 80, width: view.frame.width - 40, height: 50))
         saveLocationButton.backgroundColor = .systemBlue
@@ -58,6 +63,8 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         view.addSubview(saveLocationButton)
     }
     
+    
+    // Setup of current, saved location and distance b/w them
     func setupLabels() {
         currentLocationLabel = UILabel(frame: CGRect(x: 20, y: 100, width: view.frame.width - 40, height: 50))
         currentLocationLabel.backgroundColor = .white
@@ -81,6 +88,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         view.addSubview(distanceLabel)
     }
     
+    // location manager setup and assign delegate
     func setupLocationManager() {
         locationManager.delegate = self
         locationManager.requestAlwaysAuthorization()
@@ -88,12 +96,16 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         locationManager.startUpdatingLocation()
     }
     
+    // request for notification
     func requestNotificationPermissions() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            // Handle permission granted or denied
+            if granted{
+                print("permission is granted for notification")
+            }
         }
     }
     
+    // handle long tap gesture
     @objc func handleLongPress(gestureRecognizer: UILongPressGestureRecognizer) {
         if gestureRecognizer.state == .began {
             let touchPoint = gestureRecognizer.location(in: mapView)
@@ -113,6 +125,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         saveLocationButton.isHidden = true
     }
     
+    // add notation pin to saved location
     func addDestinationAnnotation(coordinate: CLLocationCoordinate2D) {
         if let annotation = destinationAnnotation {
             mapView.removeAnnotation(annotation)
@@ -130,6 +143,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         }
     }
     
+    // everytime location is update it perform checking
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let currentLocation = locations.last else { return }
         
@@ -140,12 +154,14 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
             let distance = currentLocation.distance(from: savedLocation)
             updateDistanceLabel(distance: distance)
             if distance <= 10 {
+                // saved location is under the range of current location
                 notifyArrival()
                 showArrivalAlert()
             }
         }
     }
     
+    // save location to address form
     func saveLocation(location: CLLocation) {
         savedLocation = location
         let geocoder = CLGeocoder()
@@ -172,6 +188,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDele
         }
     }
     
+    // saved location address format
     func formatAddress(from placemark: CLPlacemark) -> String {
         var address = ""
         if let name = placemark.name {
